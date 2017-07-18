@@ -27,10 +27,14 @@ class ShippableFilter(filter.Filter):
         pass
 
     def validate_data(self, data):
+        if 'statuses' not in data or 'sha' not in data:
+            return False
         sha = data['sha']
-        if sha not in data['statuses']:
+        if sha not in data['statuses'] or len(data['statuses'][sha]) == 0:
             return False
         status = data['statuses'][sha][0]
+        if 'state' not in status or 'context' not in status:
+            return False
         if status['state'] == 'success' and status['context'] == 'Shippable':
             return True
         return False
