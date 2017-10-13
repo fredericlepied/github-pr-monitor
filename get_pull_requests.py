@@ -39,13 +39,16 @@ def check_rate_limit(github, nb_req=1):
         print('Rate limiting for %d s' % secs)
         time.sleep(secs)
 
+if len(sys.argv) not in (4, 5, 6):
+    print(
+        'Usage: %s <repository name> <target directory> <key> '
+        '[<user> <password>|<token>]'
+        % sys.argv[0])
+    sys.exit(1)
+
 reponame = sys.argv[1]
 target_dir = sys.argv[2]
 key = sys.argv[3]
-
-if len(sys.argv) not in (4, 5, 6):
-    print('Usage: %s <repository name> <target directory> <key> [<user> <password>|<token>]')
-    sys.exit(1)
 
 if len(sys.argv) == 5:
     gh_handler = Github(sys.argv[4])
@@ -60,6 +63,7 @@ check_rate_limit(gh_handler)
 
 for pr in repo.get_pulls():
     print('processing PR %d' % pr.number)
+    print(pr)
     filename = os.path.join(target_dir, str(pr.number))
     if os.path.exists(filename):
         try:
@@ -95,6 +99,11 @@ for pr in repo.get_pulls():
         statuses[commit.sha] = [{'state': s.state, 'id': s.id, 'context': s.context,
                                  'updated_at': time.mktime(s.updated_at.timetuple())}
                                 for s in commit.get_statuses()]
+    issue = repo.get_issue(pr.number)
+    if issue:
+        d['labels'] = [l.name for l in issue.labels]
+    else:
+        d['labels'] = []
     d['statuses'] = statuses
     with open(filename, 'w') as f:
         f.write(json.dumps(d))
