@@ -32,6 +32,11 @@ if [ -z "$PROJECT" ]; then
     exit 1
 fi
 
+if [ ! -f ${PROJECT}-pr-info/rdo.yml ]; then
+    echo "No ${PROJECT}-pr-info/rdo.yml. Aborting." 1>&2
+    exit 1    
+fi
+
 if [ ! -d $PROJECT-pr-data/$PROJECT ]; then
     dlrn --config-file ${PROJECT}-pr.ini --info-repo $PWD/${PROJECT}-pr-info --local --dev --package-name $(basename $PROJECT) --run /bin/true
 fi
@@ -58,6 +63,6 @@ rm -rf $DLRN_CONF-data/repos/${SHA1:0:2}/${SHA1:2:2}/${SHA1}_dev
 
 export COPR_ID
 
-dlrn --config-file ${PROJECT}-pr.ini --info-repo $PWD/systemd-master-info --local --dev --package-name $(basename $PROJECT)
+dlrn --config-file ${PROJECT}-pr.ini --info-repo $PWD/${PROJECT}-pr-info --local --dev --package-name $(basename $PROJECT)
 
 # extract-pr.sh ends here
