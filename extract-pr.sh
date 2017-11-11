@@ -59,7 +59,7 @@ git checkout pr-$PR || :
 
 cd ../..
 
-rm -rf $DLRN_CONF-data/repos/${SHA1:0:2}/${SHA1:2:2}/${SHA1}_dev
+rm -rf ${PROJECT}-pr-data/repos/${SHA1:0:2}/${SHA1:2:2}/${SHA1}_dev
 
 export COPR_ID
 
