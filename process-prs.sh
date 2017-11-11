@@ -58,15 +58,18 @@ done | sort -rn | while read times pullreq sha1; do
 	$dir/github_vote.py $GITHUB_ACCOUNT/$PROJECT $sha1 pending "$CI_CONTEXT" "$CI_DETAIL [pending]"
 	mv $PROJECT/todo/$pullreq $PROJECT/done/$pullreq
 	cd $DLRN_HOME
-	if $dir/extract-pr.sh $pullreq $FILE $sha1; then
+	if $dir/extract-pr.sh $pullreq $dir/$FILE $sha1; then
 	    ln -f $dir/$PROJECT/done/$pullreq $dir/$PROJECT/success/$pullreq
-	    $dir/github_vote.py $GITHUB_ACCOUNT/$PROJECT $sha1 success "$CI_CONTEXT" "$CI_DETAIL [succeeded]" $SERVER_URL/$PROJECT-pr/${sha1:0:2}/${sha1:2:2}/${sha1}_dev/
+            cd $dir
+	    ./github_vote.py $GITHUB_ACCOUNT/$PROJECT $sha1 success "$CI_CONTEXT" "$CI_DETAIL [succeeded]" $SERVER_URL/$PROJECT-pr/${sha1:0:2}/${sha1:2:2}/${sha1}_dev/
 	else
 	    ln -f $dir/$PROJECT/done/$pullreq $dir/$PROJECT/failure/$pullreq
             if [ -f $PROJECT-pr-data/repos/${sha1:0:2}/${sha1:2:2}/${sha1}_dev/build.log.gz ]; then
-                $dir/github_vote.py $GITHUB_ACCOUNT/$PROJECT $sha1 failure "$CI_CONTEXT" "$CI_DETAIL [failed]" $SERVER_URL/$PROJECT-pr/${sha1:0:2}/${sha1:2:2}/${sha1}_dev/build.log.gz
+                cd $dir
+                ./github_vote.py $GITHUB_ACCOUNT/$PROJECT $sha1 failure "$CI_CONTEXT" "$CI_DETAIL [failed]" $SERVER_URL/$PROJECT-pr/${sha1:0:2}/${sha1:2:2}/${sha1}_dev/build.log.gz
             else
-                $dir/github_vote.py $GITHUB_ACCOUNT/$PROJECT $sha1 error "$CI_CONTEXT" "$CI_DETAIL [internal error]" $SERVER_URL/$PROJECT-pr/${sha1:0:2}/${sha1:2:2}/${sha1}_dev/rpmbuild.log
+                cd $dir
+                ./github_vote.py $GITHUB_ACCOUNT/$PROJECT $sha1 error "$CI_CONTEXT" "$CI_DETAIL [internal error]" $SERVER_URL/$PROJECT-pr/${sha1:0:2}/${sha1:2:2}/${sha1}_dev/rpmbuild.log
             fi
         fi
     )
