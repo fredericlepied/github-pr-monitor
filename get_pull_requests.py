@@ -43,14 +43,16 @@ def check_rate_limit(github, nb_req=1):
 
 if len(sys.argv) not in (4, 5, 6):
     print(
-        'Usage: %s <repository name> <target directory> <key> '
+        'Usage: %s <repository name> <target directories separated by :> <key> '
         '[<user> <password>|<token>]'
         % sys.argv[0])
     sys.exit(1)
 
 reponame = sys.argv[1]
-target_dir = sys.argv[2]
+target_dirs = sys.argv[2].split(':')
 key = sys.argv[3]
+
+target_dir = target_dirs[0]
 
 if len(sys.argv) == 5:
     gh_handler = Github(sys.argv[4])
@@ -69,49 +71,54 @@ check_rate_limit(gh_handler)
 for pr in repo.get_pulls():
     print('processing PR %d' % pr.number)
     print(pr)
-    filename = os.path.join(target_dir, str(pr.number))
-    if os.path.exists(filename):
-        try:
-            with open(filename) as f:
-                old = json.loads(f.read(-1))
-                if old['updated_at'] == time.mktime(pr.updated_at.timetuple()):
-                    print('Already up-to-date')
-                    old['key'] = key
-                    # update all the data that don't need other calls
-                    old['number'] = pr.number
-                    old['title'] = pr.title
-                    old['state'] = pr.state
-                    old['sha'] = pr.head.sha
-                    old['mergeable'] = pr.mergeable
-                    old['created_at'] = time.mktime(pr.created_at.timetuple())
-                    with open(filename, 'w') as tosave:
-                        tosave.write(json.dumps(old))
-                    continue
-        except Exception as e:
-            print('Error reading %s: %s' % (filename, e))
-    d = {}
-    d['key'] = key
-    d['number'] = pr.number
-    d['title'] = pr.title
-    d['state'] = pr.state
-    d['sha'] = pr.head.sha
-    d['mergeable'] = pr.mergeable
-    d['updated_at'] = time.mktime(pr.updated_at.timetuple())
-    d['created_at'] = time.mktime(pr.created_at.timetuple())
-    d['files'] = [f.filename for f in pr.get_files()]
-    statuses = {}
-    for commit in pr.get_commits():
-        statuses[commit.sha] = [{'state': s.state, 'id': s.id, 'context': s.context,
-                                 'updated_at': time.mktime(s.updated_at.timetuple())}
-                                for s in commit.get_statuses()]
-    issue = repo.get_issue(pr.number)
-    if issue:
-        d['labels'] = [l.name for l in issue.labels]
-    else:
-        d['labels'] = []
-    d['statuses'] = statuses
-    with open(filename, 'w') as f:
-        f.write(json.dumps(d))
-    check_rate_limit(gh_handler, 3)
+    target_filename = os.path.join(target_dir, str(pr.number))
+    found = False
+    for dir_ in target_dirs:
+        filename = os.path.join(dir_, str(pr.number))
+        if os.path.exists(filename):
+            try:
+                with open(filename) as f:
+                    old = json.loads(f.read(-1))
+                    if old['updated_at'] == time.mktime(pr.updated_at.timetuple()):
+                        print('Already up-to-date')
+                        old['key'] = key
+                        # update all the data that don't need other calls
+                        old['number'] = pr.number
+                        old['title'] = pr.title
+                        old['state'] = pr.state
+                        old['sha'] = pr.head.sha
+                        old['mergeable'] = pr.mergeable
+                        old['created_at'] = time.mktime(pr.created_at.timetuple())
+                        with open(filename, 'w') as tosave:
+                            tosave.write(json.dumps(old))
+                        found = True
+            except Exception as e:
+                print('Error reading %s: %s' % (filename, e))
+            break
+    if not found:
+        d = {}
+        d['key'] = key
+        d['number'] = pr.number
+        d['title'] = pr.title
+        d['state'] = pr.state
+        d['sha'] = pr.head.sha
+        d['mergeable'] = pr.mergeable
+        d['updated_at'] = time.mktime(pr.updated_at.timetuple())
+        d['created_at'] = time.mktime(pr.created_at.timetuple())
+        d['files'] = [f.filename for f in pr.get_files()]
+        statuses = {}
+        for commit in pr.get_commits():
+            statuses[commit.sha] = [{'state': s.state, 'id': s.id, 'context': s.context,
+                                     'updated_at': time.mktime(s.updated_at.timetuple())}
+                                    for s in commit.get_statuses()]
+        issue = repo.get_issue(pr.number)
+        if issue:
+            d['labels'] = [l.name for l in issue.labels]
+        else:
+            d['labels'] = []
+        d['statuses'] = statuses
+        with open(target_filename, 'w') as f:
+            f.write(json.dumps(d))
+        check_rate_limit(gh_handler, 3)
 
 # get_pull_requests.py ends here

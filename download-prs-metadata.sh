@@ -19,7 +19,7 @@ if [ $# != 1 -o ! -r "$1" ]; then
     exit 1
 fi
 
-set -ex
+set -x
 
 filter() {
     cat
@@ -41,7 +41,7 @@ mkdir -p $PROJECT/prs $PROJECT/todo $PROJECT/new $PROJECT/done $PROJECT/merged
 
 while :; do
     KEY=$(echo $RANDOM|md5sum|cut -f1 -d' ')
-    ./get_pull_requests.py $GITHUB_ACCOUNT/$PROJECT $PROJECT/prs $KEY
+    ./get_pull_requests.py $GITHUB_ACCOUNT/$PROJECT $PROJECT/prs:$PROJECT/done $KEY
     cd $PROJECT/prs
     # move prs
     ls | ../../regexp_filter.py key $KEY
