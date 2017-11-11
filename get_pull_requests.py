@@ -27,6 +27,8 @@ import time
 
 from github import Github
 
+API_KEY_FILE = 'github.key'
+
 def check_rate_limit(github, nb_req=1):
     print(github.rate_limiting, github.rate_limiting_resettime)
     if github.rate_limiting[0] == 0:
@@ -54,6 +56,9 @@ if len(sys.argv) == 5:
     gh_handler = Github(sys.argv[4])
 elif len(sys.argv) == 6:
     gh_handler = Github(sys.argv[4], sys.argv[5])
+elif os.path.exists(API_KEY_FILE):
+    with open(API_KEY_FILE) as api_file:
+        gh_handler = Github(api_file.read(-1).strip())
 else:
     gh_handler = Github()
 
